@@ -1,10 +1,20 @@
 package net.cartola.cnpj.tolatlong;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CnpjDao extends Dao {
+
+    private final Connection conn;
+    
+    public CnpjDao(Connection conn) {
+        this.conn = conn;
+    }
 
     public String getSelect() {
         return "SELECT C.cnpj_id,C.cnae,C.cnpj\n"
@@ -29,7 +39,7 @@ public class CnpjDao extends Dao {
         c.setBairro(getStringOrNull(rs, "bairro"));
         c.setCep(rs.getInt("cep"));
         c.setCnae(rs.getInt("cnae"));
-        c.setCnpj(rs.getInt("cnpj"));
+        c.setCnpj(rs.getLong("cnpj"));
         c.setComplemento(getStringOrNull(rs, "complemento"));
         c.setLogradouro(getStringOrNull(rs, "logradouro"));
         c.setMunicipio(getStringOrNull(rs, "municipio"));
@@ -38,6 +48,29 @@ public class CnpjDao extends Dao {
         c.setUf(getStringOrNull(rs, "uf"));
         c.setLatitude(getBigDecimalOrNull(rs, "latitude"));
         c.setLongitude(getBigDecimalOrNull(rs, "longitude"));
+    }
+    
+    public List<Cnpj> listar(String where) throws SQLException {
+        String query = getSelect() + where;
+        System.out.println(query);
+
+        List<Cnpj> lista = new ArrayList<>();
+        try (Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                Cnpj e = newInstance();
+                setValues(e, rs);
+                lista.add(e);
+            }
+        }
+        return lista;
+    }
+    
+    public int update(Cnpj exp) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement(getUpdate());
+        prepareUpdate(stmt, exp);
+        int updateds = stmt.executeUpdate();
+        return updateds;
     }
 
     protected Cnpj newInstance() {
