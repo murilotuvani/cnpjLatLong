@@ -11,16 +11,16 @@ import java.util.List;
 public class CnpjDao extends Dao {
 
     private final Connection conn;
-    
+
     public CnpjDao(Connection conn) {
         this.conn = conn;
     }
 
     public String getSelect() {
         return "SELECT C.cnpj_id,C.cnae,C.cnpj\n"
-             + "     , C.tipo_logradouro,C.logradouro,C.numero,C.complemento\n"
-             + "     , C.bairro,C.municipio,C.uf,C.cep,C.latitude,C.longitude\n"
-             + "  FROM cnpj C";
+                + "     , C.tipo_logradouro,C.logradouro,C.numero,C.complemento\n"
+                + "     , C.bairro,C.municipio,C.uf,C.cep,C.latitude,C.longitude\n"
+                + "  FROM cnpj C";
     }
 
     public String getUpdate() {
@@ -49,7 +49,7 @@ public class CnpjDao extends Dao {
         c.setLatitude(getBigDecimalOrNull(rs, "latitude"));
         c.setLongitude(getBigDecimalOrNull(rs, "longitude"));
     }
-    
+
     public List<Cnpj> listar(String where) throws SQLException {
         String query = getSelect() + where;
         System.out.println(query);
@@ -65,7 +65,7 @@ public class CnpjDao extends Dao {
         }
         return lista;
     }
-    
+
     public int update(Cnpj exp) throws SQLException {
         PreparedStatement stmt = conn.prepareStatement(getUpdate());
         prepareUpdate(stmt, exp);

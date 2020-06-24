@@ -12,12 +12,12 @@ public class CnpjLatLongConfig {
     private String apiKey;
     private Set<Integer> cnaes;
     private Set<String> cidades;
-    
+
     private String bdHost;
     private String bdBancoDados;
     private String bdUsuario;
     private String bdSenha;
-    
+
     private String buffer;
 
     public String getApiKey() {
@@ -83,6 +83,5 @@ public class CnpjLatLongConfig {
     public void setBuffer(String buffer) {
         this.buffer = buffer;
     }
-
 
 }

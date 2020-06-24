@@ -11,8 +11,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * 23/06/2020 12:19:06
@@ -45,12 +43,12 @@ public class ConsultarLatLongDoCnpj {
                 llc.setApiKey(apiKey);
                 llc.setCidades(cidades);
                 llc.setCnaes(cnaes);
-                
+
                 llc.setBdUsuario("bancoDadosUsuario");
                 llc.setBdSenha("bancoDadosSenha");
                 llc.setBdHost("localhost:3306");
                 llc.setBdBancoDados("cnpj");
-                
+
                 llc.setBuffer("/Users/murilotuvani/cnpj");
                 String json = gson.toJson(llc);
                 Files.write(configFile.toPath(), json.getBytes(Charset.forName("UTF-8")), StandardOpenOption.CREATE_NEW);

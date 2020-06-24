@@ -42,7 +42,7 @@ public class Dao {
         }
         return value;
     }
-    
+
     protected BigDecimal getBigDecimalOrNull(ResultSet rs, String string) throws SQLException {
         BigDecimal value = rs.getBigDecimal(string);
         if (rs.wasNull()) {
@@ -150,7 +150,7 @@ public class Dao {
         }
         return value;
     }
-    
+
     protected UUID getUUID(ResultSet rs, String column) throws SQLException {
         byte[] bytes = rs.getBytes(column);
         UUID value = null;
@@ -159,7 +159,7 @@ public class Dao {
         }
         return value;
     }
-    
+
     private UUID getUUIDFromBytes(byte[] bytes) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         Long high = byteBuffer.getLong();
@@ -199,7 +199,7 @@ public class Dao {
             stmt.setBigDecimal(index, value);
         }
     }
-    
+
     protected void setNullSafe(PreparedStatement stmt, Double value, int index) throws SQLException {
         if (value == null) {
             stmt.setNull(index, java.sql.Types.DOUBLE);
@@ -239,16 +239,16 @@ public class Dao {
             stmt.setNull(index, java.sql.Types.BLOB);
         }
     }
-    
+
     protected void setNullSafe(PreparedStatement stmt, UUID uuid, int index) throws SQLException {
         if (uuid != null) {
             setNullSafe(stmt, getBytesFromUUID(uuid), index);
         } else {
             stmt.setNull(index, java.sql.Types.BLOB);
         }
-        
+
     }
-    
+
     private byte[] getBytesFromUUID(UUID uuid) {
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
         bb.putLong(uuid.getMostSignificantBits());
