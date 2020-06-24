@@ -3,6 +3,11 @@ package net.cartola.cnpj.tolatlong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.maps.GeoApiContext;
+import com.google.maps.GeocodingApi;
+import com.google.maps.GeocodingApiRequest;
+import com.google.maps.errors.ApiException;
+import com.google.maps.model.GeocodingResult;
+import com.google.maps.model.LatLng;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * 23/06/2020 12:19:06
@@ -39,7 +46,7 @@ public class ConsultarLatLongDoCnpj {
 
     public static void main(String args[]) {
         File configFile = new File("config.json");
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
         if (configFile.exists()) {
             try (FileReader fileReader = new FileReader(configFile)) {
                 CnpjLatLongConfig config = gson.fromJson(fileReader, CnpjLatLongConfig.class);
@@ -66,6 +73,8 @@ public class ConsultarLatLongDoCnpj {
                 System.out.println("Erro ao ler o arquivo de configuracao : " + ex.getMessage());
             } catch (SQLException ex) {
                 System.out.println("Erro com o banco de dados : " + ex.getMessage());
+            } catch (ApiException ex) {
+                System.out.println("Erro com a API do Maps : " + ex.getMessage());
             }
 
         } else {
@@ -94,7 +103,7 @@ public class ConsultarLatLongDoCnpj {
         }
     }
 
-    private void executar() throws SQLException {
+    private void executar() throws SQLException, IOException, ApiException, InterruptedException {
         geoApiContext = new GeoApiContext.Builder()
                 .apiKey(config.getApiKey())
                 .build();
@@ -143,8 +152,52 @@ public class ConsultarLatLongDoCnpj {
         }
     }
 
-    private boolean preencheLatitudeLongitude(Cnpj cnpj) {
+    private boolean preencheLatitudeLongitude(Cnpj cnpj) throws IOException, ApiException, InterruptedException {
+        File diretorio = new File(config.getBuffer());
+        if (diretorio.exists()) {
+            File arquivoCnpj = new File(diretorio, cnpj.getCnpj() + ".json");
+            if(arquivoCnpj.exists()) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                try(FileReader reader=new FileReader(arquivoCnpj)) {
+                    GeocodingResult result = gson.fromJson(reader, GeocodingResult.class);
+                    System.out.println("Google Place Id : " + result.placeId);
+                }
+            } else {
+                buscarApi(cnpj);
+            }
+        }
         return false;
+    }
+
+    private void buscarApi(Cnpj cnpj) throws ApiException, IOException, InterruptedException {
+        StringBuilder addressBuilder = new StringBuilder(cnpj.getLogradouro());
+        addressBuilder.append(",").append(cnpj.getNumero());
+        
+        if(isNotNull(cnpj.getComplemento())) {
+            addressBuilder.append(cnpj.getComplemento());            
+        }
+        
+        addressBuilder.append(" - ").append(cnpj.getBairro());
+        addressBuilder.append(", ").append(cnpj.getMunicipio());
+        addressBuilder.append("/").append(cnpj.getUf());
+        
+        
+        String address = addressBuilder.toString();
+        LatLng southWestBound = new LatLng(-25.0, -49.0);
+        LatLng northEastBound = new LatLng(-20.0, -45.0);
+        GeocodingApiRequest request = GeocodingApi.newRequest(geoApiContext)
+                .bounds(southWestBound, northEastBound).region("BR")
+                .address(address);
+        GeocodingResult[] result = request.await();
+        
+    }
+
+    private boolean isNotNull(String complemento) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    public boolean isNull(String str) {
+        return (str == null || str.trim().equals(""));
     }
 
 }
