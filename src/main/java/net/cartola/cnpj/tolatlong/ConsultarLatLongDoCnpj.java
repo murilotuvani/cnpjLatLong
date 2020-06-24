@@ -44,7 +44,7 @@ public class ConsultarLatLongDoCnpj {
         this.connectionFactory = cf;
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException {
         File configFile = new File("config.json");
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         if (configFile.exists()) {
