@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CnpjDao extends Dao {
@@ -66,11 +67,26 @@ public class CnpjDao extends Dao {
         return lista;
     }
 
-    public int update(Cnpj exp) throws SQLException {
+    public int update(Cnpj cnpj) throws SQLException {
         PreparedStatement stmt = conn.prepareStatement(getUpdate());
-        prepareUpdate(stmt, exp);
+        prepareUpdate(stmt, cnpj);
         int updateds = stmt.executeUpdate();
         return updateds;
+    }
+    
+    public int update(List<Cnpj> cnpjs) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement(getUpdate());
+        for(Cnpj cnpj:cnpjs) {
+            prepareUpdate(stmt, cnpj);
+            stmt.addBatch();
+        }
+        
+        int updateds [] = stmt.executeBatch();
+        int soma = 0;
+        for(int i:updateds) {
+            soma += i;
+        }
+        return soma;
     }
 
     protected Cnpj newInstance() {

@@ -2,13 +2,22 @@ package net.cartola.cnpj.tolatlong;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.maps.GeoApiContext;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -19,17 +28,44 @@ import java.util.TreeSet;
  */
 public class ConsultarLatLongDoCnpj {
 
+    private final CnpjLatLongConfig config;
+    private final ConnectionFactory connectionFactory;
+    private GeoApiContext geoApiContext;
+
+    public ConsultarLatLongDoCnpj(CnpjLatLongConfig config, ConnectionFactory cf) {
+        this.config = config;
+        this.connectionFactory = cf;
+    }
+
     public static void main(String args[]) {
         File configFile = new File("config.json");
         Gson gson = new GsonBuilder().setPrettyPrinting().create();;
         if (configFile.exists()) {
             try (FileReader fileReader = new FileReader(configFile)) {
-                CnpjLatLongConfig llc = gson.fromJson(fileReader, CnpjLatLongConfig.class);
-                System.out.println("API-KEY : " + llc.getApiKey());
-                System.out.println("CNAES   : " + llc.getCnaes());
-                System.out.println("Cidades : " + llc.getCidades());
+                CnpjLatLongConfig config = gson.fromJson(fileReader, CnpjLatLongConfig.class);
+                System.out.println("API-KEY : " + config.getApiKey());
+                System.out.println("CNAES   : " + config.getCnaes());
+                System.out.println("Cidades : " + config.getCidades());
+
+                ConnectionFactory cf = new ConnectionFactory(config);
+                try (Connection conn = cf.getConnection()) {
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery("SELECT NOW()");
+                    if (rs.next()) {
+                        Timestamp agora = rs.getTimestamp(1);
+                        String agoraStr = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(agora);
+                        System.out.println("Horário do servidor : " + agoraStr + " banco conectado!");
+                    }
+                    rs.close();
+                    stmt.close();
+
+                    ConsultarLatLongDoCnpj latLongDoCnpj = new ConsultarLatLongDoCnpj(config, cf);
+                    latLongDoCnpj.executar();
+                }
             } catch (IOException ex) {
                 System.out.println("Erro ao ler o arquivo de configuracao : " + ex.getMessage());
+            } catch (SQLException ex) {
+                System.out.println("Erro com o banco de dados : " + ex.getMessage());
             }
 
         } else {
@@ -56,20 +92,59 @@ public class ConsultarLatLongDoCnpj {
                 System.out.println("Erro ao tentar criar o arquivo de configuracao : " + ex.getMessage());
             }
         }
+    }
 
-//        File file = new File(args.length > 0 ? args[0] : "certificado.txt");
-//        if (file.exists()) {
-//            try {
-//                List<String> lines = Files.readAllLines(file.toPath());
-//                if (lines.size() > 0) {
-//                    System.out.println("Olá CNPJ!!" + lines.get(0));
-//                }
-//            } catch (IOException ex) {
-//                Logger.getLogger(ConsultarLatLongDoCnpj.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        } else {
-//            System.out.println("Informar o local do arquivo do certificado");
-//        }
+    private void executar() throws SQLException {
+        geoApiContext = new GeoApiContext.Builder()
+                .apiKey(config.getApiKey())
+                .build();
+
+        for (String cidade : config.getCidades()) {
+            String municipio = cidade.substring(0, cidade.indexOf("/"));
+            String uf = cidade.substring(cidade.indexOf("/") + 1);
+            try (Connection conn = this.connectionFactory.getConnection()) {
+                StringBuilder sbWhere = new StringBuilder(
+                                "\n WHERE c.latitude is null")
+                       .append( "\n   and c.municipio='").append(municipio)
+                       .append("'\n   and c.uf='").append(uf)
+                       .append("'\n   and c.cnae in (");
+                    
+                boolean first = true;
+                for (Integer cnae : config.getCnaes()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sbWhere.append(",");
+                    }
+                    sbWhere.append(cnae);
+                }
+                sbWhere.append(")");
+                
+                
+                CnpjDao cnpjDao = new CnpjDao(conn);
+                String where = sbWhere.toString();
+                List<Cnpj> cnpjs = cnpjDao.listar(where);
+                
+                List<Cnpj> atualizados = new ArrayList<>();
+                for(Cnpj cnpj:cnpjs) {
+                    if(preencheLatitudeLongitude(cnpj)) {
+                        atualizados.add(cnpj);
+                    }
+                    if (atualizados.size() > 250) {
+                        cnpjDao.update(atualizados);
+                        atualizados = new ArrayList<>();
+                    }
+                }
+                if (atualizados.size() > 0) {
+                    cnpjDao.update(atualizados);
+                }
+            }
+
+        }
+    }
+
+    private boolean preencheLatitudeLongitude(Cnpj cnpj) {
+        return false;
     }
 
 }
