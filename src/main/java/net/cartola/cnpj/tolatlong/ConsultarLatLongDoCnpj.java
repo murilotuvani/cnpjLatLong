@@ -115,6 +115,7 @@ public class ConsultarLatLongDoCnpj {
             try (Connection conn = this.connectionFactory.getConnection()) {
                 StringBuilder sbWhere = new StringBuilder(
                                 "\n WHERE c.latitude is null")
+                       .append( "\n   and c.situacao_cadastral=1")
                        .append( "\n   and c.municipio='").append(municipio)
                        .append("'\n   and c.uf='").append(uf)
                        .append("'\n   and c.cnae in (");
@@ -129,11 +130,6 @@ public class ConsultarLatLongDoCnpj {
                     sbWhere.append(cnae);
                 }
                 sbWhere.append(")");
-                
-                boolean debug = Boolean.getBoolean(System.getProperty("debug", "true"));
-                if (debug) {
-                    sbWhere.append("\n limit 5");
-                }
                 
                 CnpjDao cnpjDao = new CnpjDao(conn);
                 String where = sbWhere.toString();

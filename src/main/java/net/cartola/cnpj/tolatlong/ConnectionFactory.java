@@ -26,7 +26,7 @@ public class ConnectionFactory {
 
     public Connection getConnection() throws SQLException {
         if (conn == null || conn.isClosed()) {
-            conn = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?useSSL=false", user, passwd);
+            conn = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?useSSL=false&useCompression=true", user, passwd);
         }
         return conn;
     }
