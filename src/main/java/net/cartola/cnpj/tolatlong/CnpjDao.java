@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class CnpjDao extends Dao {
@@ -21,17 +20,19 @@ public class CnpjDao extends Dao {
         return "SELECT C.cnpj_id,C.cnae,C.cnpj\n"
                 + "     , C.tipo_logradouro,C.logradouro,C.numero,C.complemento\n"
                 + "     , C.bairro,C.municipio,C.uf,C.cep,C.latitude,C.longitude\n"
+                + "     , C.place_id\n"
                 + "  FROM cnpj C";
     }
 
     public String getUpdate() {
-        return "UPDATE cnpj SET latitude=?,longitude=? WHERE cnpj_id=?";
+        return "UPDATE cnpj SET latitude=?,longitude=?,place_id=? WHERE cnpj_id=?";
     }
 
     protected void prepareUpdate(PreparedStatement stmt, Cnpj c) throws SQLException {
         int idx = 1;
         setNullSafe(stmt, c.getLatitude(), idx++);
         setNullSafe(stmt, c.getLongitude(), idx++);
+        setNullSafe(stmt, c.getPlaceId(), idx++);
         stmt.setLong(idx++, c.getCnpjId());
     }
 
@@ -49,6 +50,7 @@ public class CnpjDao extends Dao {
         c.setUf(getStringOrNull(rs, "uf"));
         c.setLatitude(getBigDecimalOrNull(rs, "latitude"));
         c.setLongitude(getBigDecimalOrNull(rs, "longitude"));
+        c.setPlaceId(getStringOrNull(rs, "place_id"));
     }
 
     public List<Cnpj> listar(String where) throws SQLException {
@@ -73,17 +75,17 @@ public class CnpjDao extends Dao {
         int updateds = stmt.executeUpdate();
         return updateds;
     }
-    
+
     public int update(List<Cnpj> cnpjs) throws SQLException {
         PreparedStatement stmt = conn.prepareStatement(getUpdate());
-        for(Cnpj cnpj:cnpjs) {
+        for (Cnpj cnpj : cnpjs) {
             prepareUpdate(stmt, cnpj);
             stmt.addBatch();
         }
-        
-        int updateds [] = stmt.executeBatch();
+
+        int updateds[] = stmt.executeBatch();
         int soma = 0;
-        for(int i:updateds) {
+        for (int i : updateds) {
             soma += i;
         }
         return soma;

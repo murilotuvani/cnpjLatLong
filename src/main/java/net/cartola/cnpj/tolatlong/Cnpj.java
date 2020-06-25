@@ -18,6 +18,7 @@ public class Cnpj implements Serializable {
     private int cep;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private String placeId;
 
     public long getCnpjId() {
         return cnpjId;
@@ -111,16 +112,44 @@ public class Cnpj implements Serializable {
         return latitude;
     }
 
-    public void setLatitude(BigDecimal latitude) {
-        this.latitude = latitude;
+    public boolean setLatitude(BigDecimal latitude) {
+        boolean alterado = false;
+        if ((this.latitude == null && latitude != null)
+                || (this.latitude != null && !this.latitude.equals(latitude))) {
+            this.latitude = latitude;
+            alterado = true;
+        }
+        return alterado;
     }
 
     public BigDecimal getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(BigDecimal longitude) {
-        this.longitude = longitude;
+    public boolean setLongitude(BigDecimal longitude) {
+        boolean alterado = false;
+        if ((this.longitude == null && longitude != null)
+                || (this.longitude != null && !this.longitude.equals(longitude))) {
+            this.longitude = longitude;
+            alterado = true;
+        }
+        return alterado;
     }
+
+    public String getPlaceId() {
+        return placeId;
+    }
+
+    public boolean setPlaceId(String placeId) {
+        boolean alterado = false;
+        if ((this.placeId == null && placeId != null)
+                || (this.placeId != null && !this.placeId.equals(placeId))) {
+            this.placeId = placeId;
+            alterado = true;
+        }
+        return alterado;
+    }
+    
+    
 
 }

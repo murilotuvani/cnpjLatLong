@@ -11,6 +11,7 @@ import com.google.maps.model.LatLng;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -129,6 +130,10 @@ public class ConsultarLatLongDoCnpj {
                 }
                 sbWhere.append(")");
                 
+                boolean debug = Boolean.getBoolean(System.getProperty("debug", "true"));
+                if (debug) {
+                    sbWhere.append("\n limit 5");
+                }
                 
                 CnpjDao cnpjDao = new CnpjDao(conn);
                 String where = sbWhere.toString();
@@ -154,22 +159,25 @@ public class ConsultarLatLongDoCnpj {
 
     private boolean preencheLatitudeLongitude(Cnpj cnpj) throws IOException, ApiException, InterruptedException {
         File diretorio = new File(config.getBuffer());
+        boolean alterado = false;
+        
         if (diretorio.exists()) {
             File arquivoCnpj = new File(diretorio, cnpj.getCnpj() + ".json");
+            GeocodingResult[] result;
             if(arquivoCnpj.exists()) {
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 try(FileReader reader=new FileReader(arquivoCnpj)) {
-                    GeocodingResult result = gson.fromJson(reader, GeocodingResult.class);
-                    System.out.println("Google Place Id : " + result.placeId);
+                    result = gson.fromJson(reader, GeocodingResult[].class);
                 }
             } else {
-                buscarApi(cnpj);
+                result = buscarApi(cnpj);
             }
+            alterado = atribuiLatLng(cnpj, result);
         }
-        return false;
+        return alterado;
     }
 
-    private void buscarApi(Cnpj cnpj) throws ApiException, IOException, InterruptedException {
+    private GeocodingResult[] buscarApi(Cnpj cnpj) throws ApiException, IOException, InterruptedException {
         StringBuilder addressBuilder = new StringBuilder(cnpj.getLogradouro());
         addressBuilder.append(",").append(cnpj.getNumero());
         
@@ -181,7 +189,6 @@ public class ConsultarLatLongDoCnpj {
         addressBuilder.append(", ").append(cnpj.getMunicipio());
         addressBuilder.append("/").append(cnpj.getUf());
         
-        
         String address = addressBuilder.toString();
         LatLng southWestBound = new LatLng(-25.0, -49.0);
         LatLng northEastBound = new LatLng(-20.0, -45.0);
@@ -189,15 +196,34 @@ public class ConsultarLatLongDoCnpj {
                 .bounds(southWestBound, northEastBound).region("BR")
                 .address(address);
         GeocodingResult[] result = request.await();
+        File diretorio = new File(config.getBuffer());
+        File arquivoCnpj = new File(diretorio, cnpj.getCnpj() + ".json");
         
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String json = gson.toJson(result);
+        
+        Files.write(arquivoCnpj.toPath(), json.getBytes(Charset.forName("UTF-8")), StandardOpenOption.CREATE_NEW);
+        return result;
     }
 
-    private boolean isNotNull(String complemento) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private boolean isNotNull(String str) {
+        return !isNull(str);
     }
     
     public boolean isNull(String str) {
         return (str == null || str.trim().equals(""));
+    }
+
+    private boolean atribuiLatLng(Cnpj cnpj, GeocodingResult[] result) {
+        BigDecimal latitude = new BigDecimal(result[0].geometry.location.lat);
+        BigDecimal longitude = new BigDecimal(result[0].geometry.location.lng);
+        String placeId = result[0].placeId;
+        System.out.println("Google Place Id : " + placeId);
+        boolean alterado = false;
+        alterado = cnpj.setLatitude(latitude) || alterado;
+        alterado = cnpj.setLongitude(longitude) || alterado;
+        alterado = cnpj.setPlaceId(placeId) || alterado;
+        return alterado;
     }
 
 }
