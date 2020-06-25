@@ -168,7 +168,12 @@ public class ConsultarLatLongDoCnpj {
             } else {
                 result = buscarApi(cnpj);
             }
-            alterado = atribuiLatLng(cnpj, result);
+            if (result.length > 0) {
+                alterado = atribuiLatLng(cnpj, result);
+            } else {
+                System.out.println("Nao obteve resultado para CNPJ : " + cnpj.getCnpj());
+            }
+            
         }
         return alterado;
     }
@@ -214,7 +219,6 @@ public class ConsultarLatLongDoCnpj {
         BigDecimal latitude = new BigDecimal(result[0].geometry.location.lat);
         BigDecimal longitude = new BigDecimal(result[0].geometry.location.lng);
         String placeId = result[0].placeId;
-        System.out.println("Google Place Id : " + placeId);
         boolean alterado = false;
         alterado = cnpj.setLatitude(latitude) || alterado;
         alterado = cnpj.setLongitude(longitude) || alterado;
