@@ -25,3 +25,22 @@ java -jar target/cnpjLatLong.jar
 
 O projeto [cnpj-writer](https://github.com/murilotuvani/cnpj-writer-springboot-mysql) é o responsável para criar a base de dados e inserir os dados.
 O projeto [cnpj-reeader](https://github.com/murilotuvani/cnpj-reader) é responsável por processar os arquivos da receita federal e enviar estes dados ao cnpj-writer.
+
+## Fazendo um backup da latitude, longitude e Google Place Id para uma nova importação dos CNPJs atualizados.
+```
+drop table if exists cnpj_lat_lng;
+create table cnpj_lat_lng (
+cnpj bigint(20) NOT NULL,
+latitude decimal(11,8) DEFAULT NULL,
+longitude decimal(11,8) DEFAULT NULL,
+place_id varchar(255) DEFAULT NULL,
+PRIMARY KEY (cnpj));
+
+insert into cnpj.cnpj_lat_lng (select cnpj, latitude, longitude, place_id from cnpj.cnpj where latitude is not null);
+```
+
+## Como utilizar o [mysqldump](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)
+```
+mysqldump cnpj cnpj_lat_lng -u [USUARIO] -h [SERVIDOR] -p > [ARQUIVO_DE_BACKUP]
+mysqldump cnpj cnpj_lat_lng -u root -h 127.0.0.1 -P 3309 -p > 20200627cnpjLatLong.sql
+```
