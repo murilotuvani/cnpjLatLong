@@ -44,3 +44,23 @@ insert into cnpj.cnpj_lat_lng (select cnpj, latitude, longitude, place_id from c
 mysqldump cnpj cnpj_lat_lng -u [USUARIO] -h [SERVIDOR] -p > [ARQUIVO_DE_BACKUP]
 mysqldump cnpj cnpj_lat_lng -u root -h 127.0.0.1 -P 3309 -p > 20200627cnpjLatLong.sql
 ```
+
+## Voltando os dados do backup para as tabelas autalizadas
+### Primeiro restaurando o backup
+```
+mysql cnpj -u root -h 127.0.0.1 -P 3306 -p********** < 20200627cnpjLatLong.sql
+```
+
+### Voltando os dados da tabela de backup para a tabela principal
+```
+alter table cnpj 
+add column latitude decimal(11,8),
+add column longitude decimal(11,8),
+add column place_id varchar(255);
+
+update cnpj_lat_lng a, cnpj b, 
+   set b.latitude=a.latitude
+     , b.longitude=a.longitude
+     , b.place_id=a.place_id
+ where b.cnpj=a.cnpj;
+```
